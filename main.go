@@ -1,69 +1,44 @@
 package main
 
 import (
-	"html/template"
+	"fmt"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-// Define the template
-var tpl = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>I'm Sorry ❤️</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #ffcccb;
-            padding: 50px;
-        }
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px gray;
-            display: inline-block;
-        }
-        button {
-            background-color: #ff4d4d;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 18px;
-        }
-        button:hover {
-            background-color: #cc0000;
-        }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>I'm so sorry ❤️</h1>
-        <p>I didn't mean to upset you. Please forgive me?</p>
-        <form action="/forgive" method="post">
-            <button type="submit">Forgive Me? 😊</button>
-        </form>
-    </div>
-</body>
-</html>
-`
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	tmpl, _ := template.New("webpage").Parse(tpl)
-	tmpl.Execute(w, nil)
+// Restaurant struct
+type Restaurant struct {
+	ID   int      `json:"id"`
+	Name string   `json:"name"`
+	Menu []string `json:"menu"`
 }
 
-func forgiveHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Yay! Thank you for forgiving me! ❤️  now call me ammadi !"))
+var restaurants = []Restaurant{
+	{ID: 1, Name: "Sadguru Special", Menu: []string{"Paneer Tikka", "Dal Makhani", "Butter Naan"}},
+	{ID: 2, Name: "Tasty Bites", Menu: []string{"Veg Biryani", "Chole Bhature", "Gulab Jamun"}},
 }
 
 func main() {
-	http.HandleFunc("/", handler)
-	http.HandleFunc("/forgive", forgiveHandler)
-	http.ListenAndServe(":8080", nil)
+	r := gin.Default()
+
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "Welcome to Sadguru Catering!"})
+	})
+
+	r.GET("/restaurants", func(c *gin.Context) {
+		c.JSON(http.StatusOK, restaurants)
+	})
+
+	r.GET("/restaurant/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		for _, r := range restaurants {
+			if fmt.Sprintf("%d", r.ID) == id {
+				c.JSON(http.StatusOK, r)
+				return
+			}
+		}
+		c.JSON(http.StatusNotFound, gin.H{"error": "Restaurant not found"})
+	})
+
+	r.Run(":8080") // Start server
 }
